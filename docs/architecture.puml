@@ -1,0 +1,133 @@
+@startuml Feedback_Platform_Infrastructure
+!theme sunlust
+' Design configuration
+skinparam BackgroundColor #FFFFFF
+skinparam Shadowing false
+skinparam RoundCorner 10
+skinparam DefaultFontName "Helvetica"
+skinparam Style awesome
+
+
+skinparam BoxPadding 15
+skinparam ParticipantPadding 10
+
+' Azure Palette / Styling
+skinparam rectangle {
+    BackgroundColor<<ResourceGroup>> #F2F4F7
+    BorderColor<<ResourceGroup>> #A3B1C2
+    
+    BackgroundColor<<VNet>> #E1F5FE
+    BorderColor<<VNet>> #039BE5
+    
+    BackgroundColor<<Subnet>> #E8F5E9
+    BorderColor<<Subnet>> #43A047
+    
+    BackgroundColor<<KeyVault>> #F3E5F5
+    BorderColor<<KeyVault>> #8E24AA
+    
+    BackgroundColor<<Storage>> #FFE0B2
+    BorderColor<<Storage>> #FB8C00
+    
+    BackgroundColor<<Postgres>> #FFFDE7
+    BorderColor<<Postgres>> #FDD835
+    
+    BackgroundColor<<Communication>> #E0F2F1
+    BorderColor<<Communication>> #00897B
+    
+    BackgroundColor<<FunctionApp>> #EDE7F6
+    BorderColor<<FunctionApp>> #5E35B1
+    
+    BackgroundColor<<Monitor>> #ECEFF1
+    BorderColor<<Monitor>> #546E7A
+}
+
+title Arquitetura de Infraestrutura - Azure (IaC)
+
+rectangle "Assinatura Azure" as Azure {
+    rectangle "Resource Group: rg-feedback-platform" <<ResourceGroup>> as RG {
+
+        ' Key Vault
+        rectangle "Azure Key Vault\n(kv-feedback-platform)" <<KeyVault>> as KV {
+            folder "Segredos" {
+                [FeedbackDBUrl]
+                [FeedbackDBUser]
+                [jwt-public-key]
+                [jwt-private-key]
+                [FeedbackDBPassword]
+                [FeedbackAdminEmailList]
+                [FeedbackEmailSenderAddress]
+                [FeedbackReportContainerName]
+                [FeedbackEmailConnectionString]
+                [FeedbackReportStorageConnectionString]
+            }
+        }
+        
+        ' Storage Account
+        rectangle "Azure Storage Account\n(stfeedbackprodbrs01)" <<Storage>> as Storage
+        
+        ' Communication Services
+        rectangle "Azure Communication Services" <<Communication>> as CommService {
+            [acs-feedback-platform\n(Communication Service)] as ACS
+            [aes-feedback-platform\n(Email Service)] as AES
+            [AzureManagedDomain\n(Domain)] as Domain
+            
+            ACS -left-> AES : Vinculado
+            AES -left-> Domain : Domínio de E-mail
+        }
+        
+        ' Monitoramento e Observabilidade
+        rectangle "Monitoramento & Observabilidade" <<Monitor>> as MonitorGroup {
+            [Log Analytics Workspace\n(law-feedback-platform)] as LAW
+            [Application Insights\n(appi-feedback-platform)] as AppInsights
+            
+            AppInsights -right-> LAW : Envia Telemetria
+        }
+        
+        ' Rede Virtual (VNet)
+        rectangle "Virtual Network: vnet-feedback" <<VNet>> as VNet {
+            
+            rectangle "Subnet Geral: snet-feedback" <<Subnet>> as GeneralSubnet {
+                rectangle "Function App: Login\n(func-feedback-platform-login)" <<FunctionApp>> as FuncLogin
+                rectangle "Function App: Core\n(func-feedback-platform-core)" <<FunctionApp>> as FuncCore
+                rectangle "Function App: Report\n(func-feedback-platform-report)" <<FunctionApp>> as FuncReport
+            }
+            
+            rectangle "Subnet Banco: snet-feedback-postgres\n(Delegada)" <<Subnet>> as DBSubnet {
+                rectangle "Azure Database for PostgreSQL\n(pg-feedback-platform)" <<Postgres>> as PostgresServer
+            }
+        }
+        
+        ' Private DNS Zone
+        rectangle "Private DNS Zone\n(feedback.private.postgres.database.azure.com)" as PrivateDNS
+    }
+}
+
+' Relacionamentos e Fluxo de Permissões / Conexões
+
+' Rede e DNS
+VNet -[hidden]down-> PrivateDNS
+PrivateDNS -down-> PostgresServer : Resolve Nome do Servidor
+
+' Service Endpoints
+GeneralSubnet -down-> Storage : Service Endpoint (Microsoft.Storage)
+
+' Monitoramento
+FuncLogin -up-> AppInsights : Logs & Telemetria
+FuncCore -up-> AppInsights : Logs & Telemetria
+FuncReport -up-> AppInsights : Logs & Telemetria
+
+' Permissão Key Vault (RBAC - Key Vault Secrets User)
+FuncLogin -right-> KV : Lê Chaves JWT (Secrets User)
+FuncCore -right-> KV : Lê DB & Email Credentials (Secrets User)
+FuncReport -right-> KV : Lê Storage Credentials (Secrets User)
+
+' Comunicação
+FuncCore -down-> CommService : Dispara Notificações por E-mail
+
+' Banco de Dados
+FuncCore -down-> PostgresServer : Conecta via JDBC (VNet Integration)
+
+' Storage
+FuncReport -down-> Storage : Armazena e lê relatórios de feedback (Blobs)
+
+@enduml
