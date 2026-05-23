@@ -415,6 +415,9 @@ Antes de iniciar é necessario instalar o `azure CLI`, outra opção usar o `clo
         gh secret set TENANT_ID --body "$TENANT_ID" --repo $LOGIN_REPO
         gh secret set SUBSCRIPTION_ID --body "$SUBSCRIPTION_ID" --repo $LOGIN_REPO
         ```
+
+        > **Alternativa Web:** Se preferir ou não possuir o GitHub CLI (`gh`) instalado, os segredos (`LOGIN_CLIENT_ID`, `TENANT_ID` e `SUBSCRIPTION_ID`) podem ser configurados manualmente pela interface web do GitHub: acesse o repositório correspondente -> `Settings` -> `Secrets and variables` -> `Actions` -> `New repository secret`.
+
 16. Feedback Core
     1. Criar a Function App
         ``` pwsh
@@ -535,6 +538,8 @@ Antes de iniciar é necessario instalar o `azure CLI`, outra opção usar o `clo
         gh secret set SUBSCRIPTION_ID --body "$SUBSCRIPTION_ID" --repo $CORE_REPO
         ```
 
+        > **Alternativa Web:** Se preferir ou não possuir o GitHub CLI (`gh`) instalado, os segredos (`CORE_CLIENT_ID`, `TENANT_ID` e `SUBSCRIPTION_ID`) podem ser configurados manualmente pela interface web do GitHub: acesse o repositório correspondente -> `Settings` -> `Secrets and variables` -> `Actions` -> `New repository secret`.
+
     Aviso importante: Após configurar um repositório (com suas credenciais e segredos), é necessário rodar um build (por exemplo, disparar uma GitHub Action) para que seja feito o deploy da aplicação na Azure.
 
 17. Report
@@ -631,6 +636,8 @@ Antes de iniciar é necessario instalar o `azure CLI`, outra opção usar o `clo
         gh secret set TENANT_ID --body "$TENANT_ID" --repo $REPORT_REPO
         gh secret set SUBSCRIPTION_ID --body "$SUBSCRIPTION_ID" --repo $REPORT_REPO
         ```
+
+        > **Alternativa Web:** Se preferir ou não possuir o GitHub CLI (`gh`) instalado, os segredos (`REPORT_CLIENT_ID`, `TENANT_ID` e `SUBSCRIPTION_ID`) podem ser configurados manualmente pela interface web do GitHub: acesse o repositório correspondente -> `Settings` -> `Secrets and variables` -> `Actions` -> `New repository secret`.
     6. Exemplo de execução/gatilho da Function
         ``` pwsh
         curl -X POST \
