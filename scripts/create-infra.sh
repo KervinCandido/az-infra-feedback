@@ -124,7 +124,7 @@ az network private-dns link vnet create \
 
 # Criando Azure Database for PostgreSQL (Flexible Server)
 echo "Criando servidor de postgresql ${DB_SERVER_NAME}"
-az postgres flexible-server create --verbose \
+az postgres flexible-server create \
     --resource-group $RG_NAME \
     --name $DB_SERVER_NAME \
     --location $LOCATION \
@@ -543,21 +543,48 @@ rm login_fed_creds.json core_fed_creds.json report_fed_creds.json
 rm workspace_id.txt
 rm dominio_id.txt
 
-unset SUBSCRIPTION_ID
-unset TENANT_ID
-unset LOGIN_CLIENT_ID
-unset CORE_CLIENT_ID
-
-unset PRINCIPAL_ID
-unset KV_URI
-unset GITHUB_LOGIN_APP_NAME
+unset RG_NAME
+unset LOCATION
+unset VNET_NAME
+unset VSUBNET_NAME
+unset DB_SUBNET_NAME
+unset DB_DNS_ZONE_NAME
+unset KEY_VAULT_NAME
+unset STORAGE_ACCOUNT_NAME
+unset DB_SERVER_NAME
+unset DB_ADMIN_USER
+unset DB_ADMIN_PASSWORD
 unset DB_HOST
 unset DB_JDBC_URL
-unset EMAIL_CONN_STR
+unset COMMUNICATION_SERVICE_NAME
+unset EMAIL_SERVICE_NAME
+unset EMAIL_DOMAIN_NAME
 unset EMAIL_DOMAIN
 unset EMAIL_SENDER
-unset STORAGE_CONNECTION_STRING
+unset EMAIL_CONN_STR
+unset ADMIN_EMAIL
+unset WORKSPACE_NAME
+unset APP_INSIGHTS_NAME
+unset SUBSCRIPTION_ID
+unset TENANT_ID
+unset CURRENT_USER_ID
+unset FUNCTION_LOGIN_NAME
+unset PRIVATE_SECRET_NAME
+unset PUBLIC_SECRET_NAME
+unset LOGIN_REPO
+unset GITHUB_LOGIN_APP_NAME
+unset LOGIN_CLIENT_ID
+unset FUNCTION_CORE_NAME
+unset CORE_REPO
+unset GITHUB_CORE_APP_NAME
+unset CORE_CLIENT_ID
+unset FUNCTION_REPORT_NAME
+unset REPORT_REPO
+unset GITHUB_REPORT_APP_NAME
 unset REPORT_CLIENT_ID
+unset PRINCIPAL_ID
+unset KV_URI
+unset STORAGE_CONNECTION_STRING
 
 
 

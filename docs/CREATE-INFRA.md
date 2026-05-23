@@ -38,40 +38,94 @@ Antes de iniciar é necessario instalar o `azure CLI`, outra opção usar o `clo
     ``` pwsh
     az login
     ```
-2. Criando variável para facilitar ajustes nos nomes/valores utilizados
-    ```bash
-    RG_NAME="rg-feedback-platform"
-    LOCATION="brazilsouth"
-    VNET_NAME="vnet-feedback"
-    VSUBNET_NAME="snet-feedback"
-    DB_SUBNET_NAME="snet-feedback-postgres"
-    DB_DNS_ZONE_NAME="feedback.private.postgres.database.azure.com"
-    KEY_VAULT_NAME="kv-feedback-platform"
-    STORAGE_ACCOUNT_NAME="stfeedbackprodbrs01"
-    DB_SERVER_NAME="pg-feedback-platform"
-    DB_ADMIN_USER="feedback"
-    DB_ADMIN_PASSWORD="SuaSenhaForteAqui123!"
-    COMMUNICATION_SERVICE_NAME="acs-feedback-platform"
-    EMAIL_SERVICE_NAME="aes-feedback-platform"
-    EMAIL_DOMAIN_NAME="AzureManagedDomain"
-    ADMIN_EMAIL="ex.email@mail.com,  email.admin@mail.com"
-    WORKSPACE_NAME="law-feedback-platform"
-    APP_INSIGHTS_NAME="appi-feedback-platform"
-    PLAN_NAME="plan-feedback-platform"
-    SUBSCRIPTION_ID=$(az account show --query id --output tsv)
-    TENANT_ID=$(az account show --query tenantId --output tsv)
-    FUNCTION_LOGIN_NAME="func-feedback-platform-login"
-    PRIVATE_SECRET_NAME="jwt-private-key"
-    PUBLIC_SECRET_NAME="jwt-public-key"
-    LOGIN_REPO="KervinCandido/az-func-feedback-login"
-    GITHUB_LOGIN_APP_NAME="github-actions-feedback-platform-login"
-    FUNCTION_CORE_NAME="func-feedback-platform-core"
-    CORE_REPO="KervinCandido/az-func-feedback-core"
-    GITHUB_CORE_APP_NAME="github-actions-feedback-platform-core"
-    FUNCTION_REPORT_NAME="func-feedback-platform-report"
-    REPORT_REPO="KervinCandido/az-func-feedback-report"
-    GITHUB_REPORT_APP_NAME="github-actions-feedback-platform-report"
-    ```
+2. Configuração de Variáveis de Ambiente
+    Para facilitar os ajustes nos nomes e valores utilizados em toda a infraestrutura, defina as variáveis abaixo divididas por grupos de acordo com a finalidade descrita.
+
+    * **2.1. Grupo de Recursos e Localização (Resource Group & Location)**
+      Define o nome do grupo de recursos (onde todos os recursos serão agrupados logicamente na assinatura do Azure) e a região geográfica do datacenter onde serão implantados.
+      ```bash
+      RG_NAME="rg-feedback-platform"
+      LOCATION="brazilsouth"
+      ```
+
+    * **2.2. Infraestrutura de Rede (Networking)**
+      Variáveis para configurar a rede virtual (VNet), as sub-redes dedicadas para os recursos gerais e o banco de dados, além da zona DNS privada para resolução de nomes interna.
+      ```bash
+      VNET_NAME="vnet-feedback"
+      VSUBNET_NAME="snet-feedback"
+      DB_SUBNET_NAME="snet-feedback-postgres"
+      DB_DNS_ZONE_NAME="feedback.private.postgres.database.azure.com"
+      ```
+
+    * **2.3. Segurança e Armazenamento (Key Vault & Storage)**
+      Nomes do Key Vault (cofre de chaves utilizado para armazenar segredos e strings de conexão de forma segura) e da Storage Account (usada para blobs e arquivos de apoio às functions).
+      ```bash
+      KEY_VAULT_NAME="kv-feedback-platform"
+      STORAGE_ACCOUNT_NAME="stfeedbackprodbrs01"
+      ```
+
+    * **2.4. Banco de Dados (Flexible PostgreSQL Server)**
+      Configurações de criação do servidor gerenciado do PostgreSQL, definindo o nome do servidor, o usuário administrador e a respectiva senha forte de acesso.
+      ```bash
+      DB_SERVER_NAME="pg-feedback-platform"
+      DB_ADMIN_USER="feedback"
+      DB_ADMIN_PASSWORD="SuaSenhaForteAqui123!"
+      ```
+
+    * **2.5. Serviços de Comunicação (Communication Services)**
+      Variáveis para habilitar o envio automatizado de e-mails transacionais (como notificações) por meio do Azure Communication Services.
+      ```bash
+      COMMUNICATION_SERVICE_NAME="acs-feedback-platform"
+      EMAIL_SERVICE_NAME="aes-feedback-platform"
+      EMAIL_DOMAIN_NAME="AzureManagedDomain"
+      ADMIN_EMAIL="ex.email@mail.com,  email.admin@mail.com"
+      ```
+
+    * **2.6. Monitoramento e Diagnóstico (Observability)**
+      Configurações dos serviços de log centralizados (Log Analytics Workspace) e de monitoramento de performance de aplicações (Application Insights) para rastrear telemetrias das Function Apps.
+      ```bash
+      WORKSPACE_NAME="law-feedback-platform"
+      APP_INSIGHTS_NAME="appi-feedback-platform"
+      ```
+
+    * **2.7. Plano de Hospedagem (App Service Plan)**
+      Define o nome do plano de consumo compartilhado no Azure que hospedará e executará os microsserviços em arquitetura serverless.
+      ```bash
+      PLAN_NAME="plan-feedback-platform"
+      ```
+
+    * **2.8. Identificação da Assinatura Azure (Subscription & Tenant)**
+      Obtém dinamicamente o ID da Assinatura do Azure e o ID do Tenant do usuário que está logado no Azure CLI.
+      ```bash
+      SUBSCRIPTION_ID=$(az account show --query id --output tsv)
+      TENANT_ID=$(az account show --query tenantId --output tsv)
+      ```
+
+    * **2.9. Microsserviço de Login (Function App - Login)**
+      Nomes e segredos específicos do microsserviço de autenticação, chaves pública/privada de assinatura dos tokens JWT e credenciais de Integração Contínua vinculadas ao seu respectivo repositório no GitHub.
+      ```bash
+      FUNCTION_LOGIN_NAME="func-feedback-platform-login"
+      PRIVATE_SECRET_NAME="jwt-private-key"
+      PUBLIC_SECRET_NAME="jwt-public-key"
+      LOGIN_REPO="KervinCandido/az-func-feedback-login"
+      GITHUB_LOGIN_APP_NAME="github-actions-feedback-platform-login"
+      ```
+
+    * **2.10. Microsserviço Core (Function App - Core)**
+      Configurações para a Function App central contendo as regras de negócio do ecossistema e dados de integração de CI/CD para deploy via GitHub Actions.
+      ```bash
+      FUNCTION_CORE_NAME="func-feedback-platform-core"
+      CORE_REPO="KervinCandido/az-func-feedback-core"
+      GITHUB_CORE_APP_NAME="github-actions-feedback-platform-core"
+      ```
+
+    * **2.11. Microsserviço de Relatórios (Function App - Report)**
+      Configurações de criação do microsserviço de geração de relatórios e dados para implantação automática via GitHub Actions.
+      ```bash
+      FUNCTION_REPORT_NAME="func-feedback-platform-report"
+      REPORT_REPO="KervinCandido/az-func-feedback-report"
+      GITHUB_REPORT_APP_NAME="github-actions-feedback-platform-report"
+      ```
 3. Criando o **Resource Group**
     ``` pwsh
     az group create --name $RG_NAME --location $LOCATION
@@ -84,6 +138,15 @@ Antes de iniciar é necessario instalar o `azure CLI`, outra opção usar o `clo
     - Habilitação do service-endpoints. O Service Endpoint é uma conexão segura e direta entre sua rede virtual (VNET) e serviços Azure, mantendo o tráfego dentro da rede privada da Microsoft e fora da internet pública.
     ``` pwsh
     az network vnet subnet update --name $VSUBNET_NAME --vnet-name $VNET_NAME --resource-group $RG_NAME --service-endpoints Microsoft.Storage
+    ```
+    - Criando subnet para PostgreSQL (delegada)
+    ``` pwsh
+    az network vnet subnet create \
+      --resource-group $RG_NAME \
+      --vnet-name $VNET_NAME \
+      --name $DB_SUBNET_NAME \
+      --address-prefixes 10.0.1.0/24 \
+      --delegations Microsoft.DBforPostgreSQL/flexibleServers
     ```
 5. Criando e configurando o Azure Key Vault
     1. Criando key vault
@@ -117,12 +180,34 @@ Antes de iniciar é necessario instalar o `azure CLI`, outra opção usar o `clo
         --location $LOCATION \
         --resource-group $RG_NAME \
         --sku Standard_LRS \
-        --allow-blob-public-access false \
         --min-tls-version TLS1_2 \
-        --default-action Deny \
-        --vnet-name $VNET_NAME --subnet $VSUBNET_NAME
+        --allow-blob-public-access false \
+        --default-action Allow
+
+    STORAGE_CONNECTION_STRING=$(az storage account show-connection-string \
+        --name $STORAGE_ACCOUNT_NAME \
+        --resource-group $RG_NAME \
+        --query connectionString \
+        --output tsv)
     ```
-7. Criando Azure Database for PostgreSQL (Flexible Server)
+7. Criando a Zona DNS Privada e Vinculando à VNet
+    1. Criar a Zona DNS Privada
+        ``` pwsh
+        az network private-dns zone create \
+          --resource-group $RG_NAME \
+          --name $DB_DNS_ZONE_NAME
+        ```
+    2. Vincular a Zona DNS à sua VNet para que as Functions consigam resolver o DNS do banco
+        ``` pwsh
+        az network private-dns link vnet create \
+          --resource-group $RG_NAME \
+          --zone-name $DB_DNS_ZONE_NAME \
+          --name "feedback-db-vnet-link" \
+          --virtual-network $VNET_NAME \
+          --registration-enabled false
+        ```
+
+8. Criando Azure Database for PostgreSQL (Flexible Server)
     ``` pwsh
     az postgres flexible-server create \
         --resource-group $RG_NAME \
@@ -132,18 +217,26 @@ Antes de iniciar é necessario instalar o `azure CLI`, outra opção usar o `clo
         --admin-password $DB_ADMIN_PASSWORD \
         --sku-name Standard_B2s \
         --tier Burstable \
-        --version 18.3 \
-        --public-access All
+        --version 18 \
+        --vnet $VNET_NAME \
+        --subnet $DB_SUBNET_NAME \
+        --private-dns-zone $DB_DNS_ZONE_NAME \
+        --yes
+
+    DB_HOST=$(az postgres flexible-server show --resource-group $RG_NAME --name $DB_SERVER_NAME --query fullyQualifiedDomainName --output tsv)
+    DB_JDBC_URL="jdbc:postgresql://$DB_HOST:5432/postgres?sslmode=require"
     ```
-8. Criando o Communication Service
+
+9. Criando o Communication Service
     ``` pwsh
     az communication create \
-    --name $COMMUNICATION_SERVICE_NAME \
-    --resource-group $RG_NAME \
-    --data-location "Brazil" \
-    --location "Global"
+        --name $COMMUNICATION_SERVICE_NAME \
+        --resource-group $RG_NAME \
+        --data-location "Brazil" \
+        --location "Global"
     ```
-9. Criando o Communication Email Service
+
+10. Criando o Communication Email Service
     ``` pwsh
     az communication email create \
         --name $EMAIL_SERVICE_NAME \
@@ -151,7 +244,8 @@ Antes de iniciar é necessario instalar o `azure CLI`, outra opção usar o `clo
         --data-location "Brazil" \
         --location "Global"
     ```
-10. Criando o dominio para o email
+
+11. Criando o dominio para o email
     ``` pwsh
     az communication email domain create \
         --email-service-name $EMAIL_SERVICE_NAME \
@@ -160,29 +254,43 @@ Antes de iniciar é necessario instalar o `azure CLI`, outra opção usar o `clo
         --location "Global" \
         --domain-management "AzureManaged"
     ```
-11. Vinculando o domínio de e-mail ao Communication Service principal
+
+12. Vinculando o domínio de e-mail ao Communication Service principal e obtendo credenciais
     ``` pwsh
     az communication email domain show \
-    --email-service-name "aes-feedback-platform" \
-    --name "AzureManagedDomain" \
-    --resource-group "rg-feedback-platform" \
-    --query id --output tsv > dominio_id.txt
+        --email-service-name "$EMAIL_SERVICE_NAME" \
+        --name "$EMAIL_DOMAIN_NAME" \
+        --resource-group $RG_NAME \
+        --query id --output tsv > dominio_id.txt
 
     az communication update \
         --name $COMMUNICATION_SERVICE_NAME \
         --resource-group $RG_NAME \
         --linked-domains @dominio_id.txt
 
-    rm dominio_id.txt
+    EMAIL_CONN_STR=$(az communication list-key \
+        --name "$COMMUNICATION_SERVICE_NAME" \
+        --resource-group "$RG_NAME" \
+        --query primaryConnectionString \
+        --output tsv)
+
+    EMAIL_DOMAIN=$(az communication email domain show \
+        --email-service-name "$EMAIL_SERVICE_NAME" \
+        --name "$EMAIL_DOMAIN_NAME" \
+        --resource-group "$RG_NAME" \
+        --query "mailFromSenderDomain" \
+        --output tsv)
+
+    EMAIL_SENDER="donotreply@${EMAIL_DOMAIN}"
     ```
-12. Criando Log Analytics Workspace
+13. Criando Log Analytics Workspace
     ``` pwsh
     az monitor log-analytics workspace create \
         --resource-group "$RG_NAME" \
         --workspace-name "$WORKSPACE_NAME" \
         --location "$LOCATION"
     ```
-13. Application Insights
+14. Application Insights
     ``` pwsh
     az extension add --name application-insights
     az monitor log-analytics workspace show \
@@ -197,10 +305,8 @@ Antes de iniciar é necessario instalar o `azure CLI`, outra opção usar o `clo
         --kind web \
         --application-type web \
         --workspace @workspace_id.txt
-
-    rm workspace_id.txt
     ```
-14. Criando functionapp plan
+15. Criando functionapp plan
     ``` pwsh
     az functionapp plan create \
         --name "$PLAN_NAME" \
@@ -209,7 +315,7 @@ Antes de iniciar é necessario instalar o `azure CLI`, outra opção usar o `clo
         --sku FC1 \
         --is-linux true
     ```
-15. Function Apps (Login)
+16. Function Apps (Login)
     1. Criando Function
         ``` pwsh
         az functionapp create \
@@ -220,9 +326,9 @@ Antes de iniciar é necessario instalar o `azure CLI`, outra opção usar o `clo
             --functions-version 4 \
             --plan "$PLAN_NAME" \
             --runtime java \
-            --runtime-version 25 \
+            --runtime-version "25.0" \
             --os-type Linux \
-            --vnet $VNET_NAME \ 
+            --vnet $VNET_NAME \
             --subnet $VSUBNET_NAME \
             --instance-memory 512
 
@@ -259,8 +365,6 @@ Antes de iniciar é necessario instalar o `azure CLI`, outra opção usar o `clo
             --assignee "$PRINCIPAL_ID" \
             --role "Key Vault Secrets User" \
             --scope @kv_id.txt
-
-        rm kv_id.txt
         ```
     4. Adicionando chaves pública e privada no key vault
         ``` pwsh
@@ -272,34 +376,30 @@ Antes de iniciar é necessario instalar o `azure CLI`, outra opção usar o `clo
         az keyvault secret set \
             --vault-name "$KEY_VAULT_NAME" \
             --name "$PRIVATE_SECRET_NAME" \
-            --file private_key.pem
+            --value "@private_key.pem"
         
         az keyvault secret set \
             --vault-name "$KEY_VAULT_NAME" \
             --name "$PUBLIC_SECRET_NAME" \
-            --file public_key.pem
-        
-        rm private_key.pem public_key.pem
+            --value "@public_key.pem"
         ```
     5. Configurando deploy automático da aplicação. Repositório: [az-func-feedback-login](https://github.com/KervinCandido/az-func-feedback-login).
     Para criação dos secrets do github é necessario está  logado no github cli, também é possivel criar as secrets view web.
         ``` pwsh
-        GITHUB_APP_NAME="github-actions-feedback-platform-login"
-
         #Verificando App Registration no Entra ID...
-        LOGIN_CLIENT_ID=$(az ad app list --display-name "$GITHUB_APP_NAME" --query "[0].appId" --output tsv | tr -d '\r')
+        LOGIN_CLIENT_ID=$(az ad app list --display-name "$GITHUB_LOGIN_APP_NAME" --query "[0].appId" --output tsv | tr -d '\r')
 
         if [ -z "$LOGIN_CLIENT_ID" ]; then
             #Criando App Registration dedicado para o GitHub...
-            LOGIN_CLIENT_ID=$(az ad app create --display-name "$GITHUB_APP_NAME" --query appId --output tsv | tr -d '\r')
+            LOGIN_CLIENT_ID=$(az ad app create --display-name "$GITHUB_LOGIN_APP_NAME" --query appId --output tsv | tr -d '\r')
             
-            #"Criando Service Principal...
+            #Criando Service Principal...
             az ad sp create --id "$LOGIN_CLIENT_ID"
         fi
 
         # Configuração da Credencial Federada (OIDC)
         # Configurando credencial federada (Aperto de mão GitHub <> Azure)...
-        cat <<EOF > fed_creds.json
+        cat <<EOF > login_fed_creds.json
         {
             "name": "github-actions-login-func",
             "issuer": "https://token.actions.githubusercontent.com",
@@ -309,13 +409,19 @@ Antes de iniciar é necessario instalar o `azure CLI`, outra opção usar o `clo
         }
         EOF
 
+        # Se a credencial federada já existir, removemos para garantir que seja recriada com as configurações corretas
+        az ad app federated-credential delete \
+            --id "$LOGIN_CLIENT_ID" \
+            --federated-credential-id "github-actions-login-func" \
+            2>/dev/null || true
+
         az ad app federated-credential create \
             --id "$LOGIN_CLIENT_ID" \
-            --parameters @fed_creds.json
+            --parameters @login_fed_creds.json
 
         # Atribuição de Permissão (RBAC) isolada na Function App
         # Garantindo permissão de Contributor apenas no escopo da Function...
-        az functionapp show --name "${FUNCTION_LOGIN_NAME}" --resource-group "rg-feedback-platform" --query id --output tsv | tr -d '\r' > function_login_scope.txt
+        az functionapp show --name "${FUNCTION_LOGIN_NAME}" --resource-group "$RG_NAME" --query id --output tsv | tr -d '\r' > function_login_scope.txt
 
         az role assignment create \
             --assignee "$LOGIN_CLIENT_ID" \
@@ -327,7 +433,7 @@ Antes de iniciar é necessario instalar o `azure CLI`, outra opção usar o `clo
         gh secret set TENANT_ID --body "$TENANT_ID" --repo $LOGIN_REPO
         gh secret set SUBSCRIPTION_ID --body "$SUBSCRIPTION_ID" --repo $LOGIN_REPO
         ```
-16. Feedback Core
+17. Feedback Core
     ``` pwsh
     # function core
     echo "Criando function ${FUNCTION_CORE_NAME}"
@@ -456,7 +562,7 @@ Antes de iniciar é necessario instalar o `azure CLI`, outra opção usar o `clo
 
     Aviso importante: Após configurar um repositório (com suas credenciais e segredos), é necessário rodar um build (por exemplo, disparar uma GitHub Action) para que seja feito o deploy da aplicação na Azure.
 
-17. Report
+18. Report
     ``` pwsh
     # function report
     echo "Criando function ${FUNCTION_REPORT_NAME}"
@@ -565,7 +671,7 @@ Antes de iniciar é necessario instalar o `azure CLI`, outra opção usar o `clo
 
     Aviso importante: Após configurar um repositório (com suas credenciais e segredos), é necessário rodar um build (por exemplo, disparar uma GitHub Action) para que seja feito o deploy da aplicação na Azure.
 
-18. Limpeza
+19. Limpeza
     ``` pwsh
     rm private_key.pem public_key.pem kv_id.txt 
     rm function_login_scope.txt function_core_scope.txt function_report_scope.txt
@@ -574,19 +680,47 @@ Antes de iniciar é necessario instalar o `azure CLI`, outra opção usar o `clo
     rm workspace_id.txt
     rm dominio_id.txt
     
-    unset SUBSCRIPTION_ID
-    unset TENANT_ID
-    unset LOGIN_CLIENT_ID
-    unset CORE_CLIENT_ID
-    
-    unset PRINCIPAL_ID
-    unset KV_URI
-    unset GITHUB_LOGIN_APP_NAME
+    unset RG_NAME
+    unset LOCATION
+    unset VNET_NAME
+    unset VSUBNET_NAME
+    unset DB_SUBNET_NAME
+    unset DB_DNS_ZONE_NAME
+    unset KEY_VAULT_NAME
+    unset STORAGE_ACCOUNT_NAME
+    unset DB_SERVER_NAME
+    unset DB_ADMIN_USER
+    unset DB_ADMIN_PASSWORD
     unset DB_HOST
     unset DB_JDBC_URL
-    unset EMAIL_CONN_STR
+    unset COMMUNICATION_SERVICE_NAME
+    unset EMAIL_SERVICE_NAME
+    unset EMAIL_DOMAIN_NAME
     unset EMAIL_DOMAIN
     unset EMAIL_SENDER
-    unset STORAGE_CONNECTION_STRING
+    unset EMAIL_CONN_STR
+    unset ADMIN_EMAIL
+    unset WORKSPACE_NAME
+    unset APP_INSIGHTS_NAME
+    unset PLAN_NAME
+    unset SUBSCRIPTION_ID
+    unset TENANT_ID
+    unset CURRENT_USER_ID
+    unset FUNCTION_LOGIN_NAME
+    unset PRIVATE_SECRET_NAME
+    unset PUBLIC_SECRET_NAME
+    unset LOGIN_REPO
+    unset GITHUB_LOGIN_APP_NAME
+    unset LOGIN_CLIENT_ID
+    unset FUNCTION_CORE_NAME
+    unset CORE_REPO
+    unset GITHUB_CORE_APP_NAME
+    unset CORE_CLIENT_ID
+    unset FUNCTION_REPORT_NAME
+    unset REPORT_REPO
+    unset GITHUB_REPORT_APP_NAME
     unset REPORT_CLIENT_ID
+    unset PRINCIPAL_ID
+    unset KV_URI
+    unset STORAGE_CONNECTION_STRING
     ```
