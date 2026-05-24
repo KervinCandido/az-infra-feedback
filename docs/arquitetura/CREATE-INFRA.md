@@ -30,9 +30,59 @@ Orientações e componentes para a criação, provisionamento e replicação aut
   * `func-feedback-platform-core` (Core): Regras de negócio centrais do sistema.
   * `func-feedback-platform-report` (Report): Processamento e geração de relatórios.
 
+## Execução automatizada via script
+
+Além da execução manual descrita abaixo, a infraestrutura pode ser criada automaticamente pelo script `scripts/create-infra.sh`.
+
+Para isso, copie o arquivo de exemplo:
+
+```bash
+cp .env.example .env
+```
+
+Edite o `.env` com os nomes desejados para o ambiente e execute:
+
+```bash
+bash -n scripts/create-infra.sh
+bash scripts/create-infra.sh
+```
+
+Por padrão, o script:
+
+- carrega variáveis do `.env`, quando existir;
+- registra automaticamente os providers necessários;
+- cria os recursos de infraestrutura;
+- configura Key Vault, Function Apps, RBAC, OIDC e tenta configurar os GitHub Secrets;
+- não dispara a Function de relatório automaticamente;
+- não remove arquivos temporários automaticamente.
+
+> **Atenção:** o script configura os secrets do GitHub Actions nos repositórios definidos em `LOGIN_REPO`, `CORE_REPO` e `REPORT_REPO`.
+> Em testes com ambientes alternativos, confira se esses repositórios estão corretos para evitar sobrescrever secrets dos repositórios oficiais.
+
+> **Observação:** o script foi pensado para provisionar um ambiente novo. Para reexecuções, prefira usar nomes novos ou um Resource Group novo, pois alguns recursos da Azure podem não aceitar recriação/alteração quando já estão vinculados a outros serviços.
+
+Para disparar a Function de relatório ao final da execução, defina no `.env`:
+
+```bash
+RUN_REPORT_TRIGGER="true"
+```
+
+Para remover os arquivos temporários ao final da execução, defina no `.env`:
+
+```bash
+RUN_CLEANUP="true"
+```
+
+
 ## Passo a passo
 
-Antes de iniciar, é necessário instalar o `Azure CLI` ou utilizar o `Cloud Shell` do portal da Azure.
+Antes de iniciar, é necessário instalar/configurar:
+
+- Azure CLI, com login feito via `az login`;
+- GitHub CLI (`gh`), com login feito via `gh auth login`;
+- OpenSSL;
+- curl;
+- Bash, Git Bash, WSL ou Azure Cloud Shell.
 
 > Os comandos abaixo foram escritos para execução em Bash, Git Bash, WSL ou Azure Cloud Shell.
 > Caso utilize PowerShell, será necessário adaptar a sintaxe de variáveis, quebras de linha e redirecionamentos.
@@ -105,11 +155,23 @@ Antes de iniciar, é necessário instalar o `Azure CLI` ou utilizar o `Cloud She
       ```
 
     * **2.7. Identificação da Assinatura Azure (Subscription & Tenant)**
-      Obtém dinamicamente o ID da Assinatura do Azure e o ID do Tenant do usuário que está logado no Azure CLI.
+      Define o ID da assinatura Azure e o ID do tenant usados na configuração do GitHub Actions.
+
+      Para execução manual, obtenha os valores pelo Azure CLI:
+
       ```bash
       SUBSCRIPTION_ID=$(az account show --query id --output tsv)
       TENANT_ID=$(az account show --query tenantId --output tsv)
       ```
+
+      > Caso esteja usando o script automatizado com `.env`, essas variáveis podem ser deixadas vazias:
+      >
+      > ```bash
+      > SUBSCRIPTION_ID=""
+      > TENANT_ID=""
+      > ```
+      >
+      > Nesse caso, o script obtém automaticamente os valores com `az account show`.
 
     * **2.8. Microsserviço de Login (Function App - Login)**
       Nomes e segredos específicos do microsserviço de autenticação, chaves pública/privada de assinatura dos tokens JWT e credenciais de Integração Contínua vinculadas ao seu respectivo repositório no GitHub.
@@ -963,13 +1025,20 @@ Antes de iniciar, é necessário instalar o `Azure CLI` ou utilizar o `Cloud She
 
 
 18. Limpeza
+
+    > A limpeza manual é opcional. Os arquivos temporários gerados pelo script já estão listados no `.gitignore` para evitar commit acidental.
+    >
+    > Caso esteja usando o script automatizado, também é possível habilitar a limpeza automática definindo:
+    >
+    > ```bash
+    > RUN_CLEANUP="true"
+    > ```
+
     ```bash
-    rm private_key.pem public_key.pem kv_id.txt 
-    rm function_login_scope.txt function_core_scope.txt function_report_scope.txt
-    rm login_fed_creds.json core_fed_creds.json report_fed_creds.json
-    
-    rm workspace_id.txt
-    rm dominio_id.txt
+    rm -f private_key.pem public_key.pem kv_id.txt
+    rm -f function_login_scope.txt function_core_scope.txt function_report_scope.txt
+    rm -f login_fed_creds.json core_fed_creds.json report_fed_creds.json
+    rm -f workspace_id.txt dominio_id.txt
     
     unset RG_NAME
     unset LOCATION
@@ -1014,5 +1083,4 @@ Antes de iniciar, é necessário instalar o `Azure CLI` ou utilizar o `Cloud She
     unset KV_URI
     unset STORAGE_CONNECTION_STRING
     ```
-
     
