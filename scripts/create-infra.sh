@@ -101,8 +101,8 @@ WORKSPACE_NAME="${WORKSPACE_NAME:-law-feedback-platform}"
 APP_INSIGHTS_NAME="${APP_INSIGHTS_NAME:-appi-feedback-platform}"
 
 # github
-SUBSCRIPTION_ID=$(az account show --query id --output tsv)
-TENANT_ID=$(az account show --query tenantId --output tsv)
+SUBSCRIPTION_ID="${SUBSCRIPTION_ID:-$(az account show --query id --output tsv)}"
+TENANT_ID="${TENANT_ID:-$(az account show --query tenantId --output tsv)}"
 
 # function app - login
 FUNCTION_LOGIN_NAME="${FUNCTION_LOGIN_NAME:-func-feedback-platform-login}"
