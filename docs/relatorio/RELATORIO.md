@@ -171,6 +171,39 @@ O relatório considera o período entre 18/05/2026 23:59:00 (-03:00) e 23/05/202
 O nome do arquivo gerado será: reports/weekly/2026/05/20260518-20260523-relatorio-semanal-feedbacks.json
 ```
 
+**Exemplo de conteúdo de relatório:**
+```json
+{
+  "inicio" : "2026-05-13T00:00:00-03:00",
+  "fim" : "2026-05-20T23:59:59.999999999-03:00",
+  "totalAvaliacoes" : 21,
+  "mediaAvaliacoes" : 7.761904761904762,
+  "quantidadePorDia" : {
+    "2026-05-20" : 21
+  },
+  "quantidadePorUrgencia" : {
+    "BAIXA" : 19,
+    "MEDIA" : 1,
+    "ALTA" : 1
+  },
+  "feedbacks" : [ 
+    {
+        "id" : "70282458-06bd-4b43-8f25-21cbb69da717",
+        "descricao" : "Excelente abordagem para quem busca recolocação no mercado. Os projetos práticos apresentados no curso servem perfeitamente para compor um portfólio profissional. Recomendo fortemente para quem deseja se especializar!",
+        "nota" : 8,
+        "urgencia" : "BAIXA",
+        "dataEnvio" : "2026-05-20T06:47:34.081258Z"
+    }, {
+        "id" : "ba46a1fd-583d-44aa-96ee-fda2912b0021",
+        "descricao" : "Excelente abordagem para quem busca recolocação no mercado. Os projetos práticos apresentados no curso servem perfeitamente para compor um portfólio profissional. Recomendo fortemente para quem deseja se especializar!",
+        "nota" : 8,
+        "urgencia" : "BAIXA",
+        "dataEnvio" : "2026-05-20T06:47:39.193396Z"
+    } /* Outros feedbacks */
+  ]
+}
+```
+
 ### Infra - `az-infra-feedback`
 
 O repositório `az-infra-feedback` não é um microserviço como os outros. Trata-se de uma infraestrutura como código (IaC) responsável pela criação e gerenciamento dos recursos da Azure necessários para o funcionamento do sistema.
