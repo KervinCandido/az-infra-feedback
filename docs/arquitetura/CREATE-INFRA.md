@@ -34,8 +34,11 @@ Orientações e componentes para a criação, provisionamento e replicação aut
 
 Além da execução manual descrita abaixo, a infraestrutura pode ser criada automaticamente pelo script `scripts/create-infra.sh`.
 
-Para isso, copie o arquivo de exemplo:
-
+Para isso, use o comando `cd` para entrar na pasta.
+```bash
+cd scripts
+```
+Então gere uma cópia do arquivo de exemplo `.env.example` e nomeie como `.env`
 ```bash
 cp .env.example .env
 ```
@@ -43,8 +46,8 @@ cp .env.example .env
 Edite o `.env` com os nomes desejados para o ambiente e execute:
 
 ```bash
-bash -n scripts/create-infra.sh
-bash scripts/create-infra.sh
+bash -n create-infra.sh
+bash create-infra.sh
 ```
 
 Por padrão, o script:

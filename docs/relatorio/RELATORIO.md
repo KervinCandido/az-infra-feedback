@@ -174,3 +174,48 @@ O nome do arquivo gerado será: reports/weekly/2026/05/20260518-20260523-relator
 ### Infra - `az-infra-feedback`
 
 O repositório `az-infra-feedback` não é um microserviço como os outros. Trata-se de uma infraestrutura como código (IaC) responsável pela criação e gerenciamento dos recursos da Azure necessários para o funcionamento do sistema.
+
+
+### Provisionamento da infraestrutura
+
+A infraestrutura pode ser provisionada automaticamente pelo script `create-infra.sh` disponibilidado no [https://github.com/KervinCandido/az-infra-feedback/blob/main/scripts/](https://github.com/KervinCandido/az-infra-feedback/blob/main/scripts/).
+
+Baixe os arquivos `.env.example` e `create-infra.sh` e coloque os dois na mesma pasta.
+
+Então gere uma cópia do arquivo de exemplo `.env.example` e nomeie como `.env`
+```bash
+cp .env.example .env
+```
+
+Edite o `.env` com os nomes desejados para o ambiente e execute:
+
+```bash
+bash -n create-infra.sh
+bash create-infra.sh
+```
+
+Por padrão, o script:
+
+- carrega variáveis do `.env`, quando existir;
+- registra automaticamente os providers necessários;
+- cria os recursos de infraestrutura;
+- configura Key Vault, Function Apps, RBAC, OIDC e tenta configurar os GitHub Secrets;
+- não dispara a Function de relatório automaticamente;
+- não remove arquivos temporários automaticamente.
+
+> **Atenção:** o script configura os secrets do GitHub Actions nos repositórios definidos em `LOGIN_REPO`, `CORE_REPO` e `REPORT_REPO`.
+> Em testes com ambientes alternativos, confira se esses repositórios estão corretos para evitar sobrescrever secrets dos repositórios oficiais.
+
+> **Observação:** o script foi pensado para provisionar um ambiente novo. Para reexecuções, prefira usar nomes novos ou um Resource Group novo, pois alguns recursos da Azure podem não aceitar recriação/alteração quando já estão vinculados a outros serviços.
+
+Para disparar a Function de relatório ao final da execução, defina no `.env`:
+
+```bash
+RUN_REPORT_TRIGGER="true"
+```
+
+Para remover os arquivos temporários ao final da execução, defina no `.env`:
+
+```bash
+RUN_CLEANUP="true"
+```
