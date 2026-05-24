@@ -6,7 +6,7 @@ Este projeto atua como repositório **centralizador** e de infraestrutura de tod
 
 A solução adota uma arquitetura orientada a microsserviços serverless, baseada nativamente nos recursos da **Microsoft Azure**. O objetivo é garantir segurança, escalabilidade automática e baixo custo por meio do consumo sob demanda.
 
-![Arquitetura de Infraestrutura](./docs/Feedback_Platform_Infrastructure-Arquitetura_de_Infraestrutura___Azure__IaC_.png)
+![Arquitetura de Infraestrutura](./docs/arquitetura/Feedback_Platform_Infrastructure-Arquitetura_de_Infraestrutura___Azure__IaC_.png)
 
 A plataforma de feedback foi decomposta nos seguintes módulos:
 
@@ -31,14 +31,8 @@ Os recursos provisionados de nuvem incluem:
 - **Monitoramento**: Azure Log Analytics Workspace e Application Insights atrelados às Functions para observabilidade completa.
 
 *Guias:*
-- [Passo a passo de Infraestrutura (CREATE-INFRA.md)](./docs/CREATE-INFRA.md)
-- [Diagrama de Arquitetura (architecture.puml)](./docs/architecture.puml)
-
-### 3. 🌐 Outros Componentes
-
-- **[fiap-tech-challenge-feedback-platform](../fiap-tech-challenge-feedback-platform)**: Aplicação da plataforma principal / Gateway de integração.
-- **[iam](../iam)**: Configurações voltadas para o Identity and Access Management (Keycloak/Identidade).
-
+- [Passo a passo de Infraestrutura (CREATE-INFRA.md)](./docs/arquitetura/CREATE-INFRA.md)
+- [Diagrama de Arquitetura (architecture.puml)](./docs/arquitetura/architecture.puml)
 ---
 
 ## 🚀 Como Provisionar a Infraestrutura
@@ -59,7 +53,7 @@ DB_ADMIN_PASSWORD="<SenhaSegura>"
 # 4. Execute a automação de provisionamento (IaC)
 ./create-infra.sh
 ```
-> O detalhamento manual passo a passo de todos os comandos que o script executa está documentado em `docs/CREATE-INFRA.md`.
+> O detalhamento manual passo a passo de todos os comandos que o script executa está documentado em `docs/arquitetura/CREATE-INFRA.md`.
 
 ## 🔒 Segurança e Deploy Automatizado (CI/CD)
 
