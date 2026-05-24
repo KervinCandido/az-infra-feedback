@@ -3,3 +3,21 @@
 
 .idea
 .vscode
+
+
+# Arquivos locais gerados pelo script de infraestrutura
+core_fed_creds.json
+login_fed_creds.json
+report_fed_creds.json
+
+dominio_id.txt
+workspace_id.txt
+kv_id.txt
+
+function_core_scope.txt
+function_login_scope.txt
+function_report_scope.txt
+
+private_key.pem
+public_key.pem
+infra.log
