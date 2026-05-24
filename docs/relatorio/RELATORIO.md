@@ -4,7 +4,7 @@
 
 **Tech Challenge FIAP — Fase 4**  
 **Curso:** Pós-Graduação em Arquitetura e Desenvolvimento em Java  
-**Serviços:** `az-func-feedback-login` `az-func-feedback-core` `az-func-feedback-report`
+**Serviços:** `az-func-feedback-login`, `az-func-feedback-core` e `az-func-feedback-report`     
 **Tema:** Plataforma serverless para recebimento, classificação, persistência e notificação de feedbacks educacionais.
 
 ## Equipe
