@@ -106,7 +106,32 @@ Os usuários e senhas de demonstração estão disponíveis nas variáveis de am
 
 ### Core - `az-func-feedback-core`
 
-Este microsserviço é responsável pelo processamento de feedbacks. Ele recebe feedbacks de usuários e os armazena no Azure Database for PostgreSQL. Além disso, ele é responsável por enviar notificações de feedbacks para os administradores.
+Este microsserviço é responsável pelo processamento de *feedbacks* e pela lógica de negócio da plataforma. Ele recebe as avaliações dos usuários, processa-as e as armazena no Azure Database for PostgreSQL. Além disso, o componente envia notificações por e-mail para os administradores por meio do Azure Email Communication Services caso um *feedback* seja classificado com o nível de urgência "ALTA". Essa classificação ocorre em casos de notas menores ou iguais a 3 ou quando o texto contém palavras-chave como "travando", "bug", "não funciona", entre outras.
+
+Além dos componentes da Azure já citados anteriormente, o *core* também utiliza o Azure Key Vault para obter as chaves necessárias para o seu funcionamento. Entre as credenciais armazenadas, encontram-se a URL, o usuário e a senha do banco de dados, a chave de conexão com o Azure Email Communication Services e a chave pública necessária para validar o token JWT do usuário.
+
+O *core* disponibiliza o *endpoint* HTTP `/api/avaliacoes` utilizando o método POST, sendo este responsável pelo recebimento dos *feedbacks*.
+
+**Exemplo de *payload* de requisição:**
+```json
+{
+    "descricao": "<feedback>",
+    "nota": <nota> (de 0 a 10)
+}
+```
+
+**Exemplo de resposta (response):**
+```json
+{
+    "id": "<uuid>",
+    "descricao": "<feedback>",
+    "nota": <nota> (de 0 a 10),
+    "urgencia": "<ALTA|MEDIA|BAIXA>",
+    "dataCriacao": "<timestamp>"
+}
+```
+**Exemplo de email de notificação (urgência ALTA):**
+![Email de Notificação](exemplo_email_notifica_urgencia_alta.png)
 
 ### Report - `az-func-feedback-report`
 
