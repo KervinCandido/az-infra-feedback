@@ -1,50 +1,128 @@
 #!/bin/bash
+set -euo pipefail
 
-RG_NAME="rg-feedback-platform"
-LOCATION="brazilsouth"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-VNET_NAME="vnet-feedback"
-VSUBNET_NAME="snet-feedback"
-DB_SUBNET_NAME="snet-feedback-postgres"
-DB_DNS_ZONE_NAME="feedback.private.postgres.database.azure.com"
+ENV_FILE="${ENV_FILE:-$ROOT_DIR/.env}"
 
-KEY_VAULT_NAME="kv-feedback-platform"
+if [ -f "$ENV_FILE" ]; then
+    echo "Carregando variáveis de ambiente de: $ENV_FILE"
+    set -a
+    # shellcheck disable=SC1090
+    source "$ENV_FILE"
+    set +a
+else
+    echo "Arquivo .env não encontrado. Usando valores padrão do script."
+fi
 
-STORAGE_ACCOUNT_NAME="stfeedbackprodbrs01"
+require_command() {
+    if ! command -v "$1" >/dev/null 2>&1; then
+        echo "Erro: comando obrigatório não encontrado: $1"
+        exit 1
+    fi
+}
+
+register_provider() {
+    local namespace="$1"
+
+    echo "Verificando provider $namespace..."
+    local state
+    state=$(az provider show --namespace "$namespace" --query registrationState -o tsv 2>/dev/null || echo "NotRegistered")
+
+    if [ "$state" != "Registered" ]; then
+        echo "Registrando provider $namespace..."
+        az provider register --namespace "$namespace"
+
+        until [ "$(az provider show --namespace "$namespace" --query registrationState -o tsv)" = "Registered" ]; do
+            echo "Aguardando provider $namespace ficar Registered..."
+            sleep 10
+        done
+    fi
+}
+
+set_github_secret() {
+    local secret_name="$1"
+    local secret_value="$2"
+    local repo="$3"
+
+    if gh secret set "$secret_name" --body "$secret_value" --repo "$repo"; then
+        echo "Secret $secret_name configurado em $repo"
+    else
+        echo "Aviso: não foi possível configurar o secret $secret_name em $repo."
+        echo "Verifique se o usuário autenticado no GitHub CLI tem permissão WRITE/Admin no repositório."
+        echo "Se necessário, cadastre manualmente em Settings → Secrets and variables → Actions."
+    fi
+}
+
+require_command az
+require_command gh
+require_command openssl
+require_command curl
+
+az extension add --name communication --upgrade >/dev/null 2>&1 || true
+az extension add --name application-insights --upgrade >/dev/null 2>&1 || true
+
+register_provider "Microsoft.KeyVault"
+register_provider "Microsoft.DBforPostgreSQL"
+register_provider "Microsoft.Communication"
+register_provider "Microsoft.Web"
+register_provider "Microsoft.Storage"
+register_provider "Microsoft.Network"
+register_provider "Microsoft.OperationalInsights"
+register_provider "Microsoft.Insights"
+
+RG_NAME="${RG_NAME:-rg-feedback-platform}"
+LOCATION="${LOCATION:-brazilsouth}"
+
+
+
+VNET_NAME="${VNET_NAME:-vnet-feedback}"
+VSUBNET_NAME="${VSUBNET_NAME:-snet-feedback}"
+DB_SUBNET_NAME="${DB_SUBNET_NAME:-snet-feedback-postgres}"
+DB_DNS_ZONE_NAME="${DB_DNS_ZONE_NAME:-feedback.private.postgres.database.azure.com}"
+
+KEY_VAULT_NAME="${KEY_VAULT_NAME:-kv-feedback-platform}"
+STORAGE_ACCOUNT_NAME="${STORAGE_ACCOUNT_NAME:-stfeedbackprodbrs01}"
+
 # database
-DB_SERVER_NAME="pg-feedback-platform"
-DB_ADMIN_USER="feedback"
-DB_ADMIN_PASSWORD="SuaSenhaForteAqui123!"
+DB_SERVER_NAME="${DB_SERVER_NAME:-pg-feedback-platform}"
+DB_ADMIN_USER="${DB_ADMIN_USER:-feedback}"
+DB_ADMIN_PASSWORD="${DB_ADMIN_PASSWORD:-SuaSenhaForteAqui123!}"
+
 # communication service
-COMMUNICATION_SERVICE_NAME="acs-feedback-platform"
-EMAIL_SERVICE_NAME="aes-feedback-platform"
-EMAIL_DOMAIN_NAME="AzureManagedDomain"
-ADMIN_EMAIL="ex.email@mail.com,  email.admin@mail.com"
+COMMUNICATION_SERVICE_NAME="${COMMUNICATION_SERVICE_NAME:-acs-feedback-platform}"
+EMAIL_SERVICE_NAME="${EMAIL_SERVICE_NAME:-aes-feedback-platform}"
+EMAIL_DOMAIN_NAME="${EMAIL_DOMAIN_NAME:-AzureManagedDomain}"
+ADMIN_EMAIL="${ADMIN_EMAIL:-ex.email@mail.com;email.admin@mail.com}"
 
 # log analytics workspace
-WORKSPACE_NAME="law-feedback-platform"
-APP_INSIGHTS_NAME="appi-feedback-platform"
+WORKSPACE_NAME="${WORKSPACE_NAME:-law-feedback-platform}"
+APP_INSIGHTS_NAME="${APP_INSIGHTS_NAME:-appi-feedback-platform}"
 
 # github
 SUBSCRIPTION_ID=$(az account show --query id --output tsv)
 TENANT_ID=$(az account show --query tenantId --output tsv)
 
 # function app - login
-FUNCTION_LOGIN_NAME="func-feedback-platform-login"
-PRIVATE_SECRET_NAME="jwt-private-key"
-PUBLIC_SECRET_NAME="jwt-public-key"
-LOGIN_REPO="KervinCandido/az-func-feedback-login"
-GITHUB_LOGIN_APP_NAME="github-actions-feedback-platform-login"
+FUNCTION_LOGIN_NAME="${FUNCTION_LOGIN_NAME:-func-feedback-platform-login}"
+PRIVATE_SECRET_NAME="${PRIVATE_SECRET_NAME:-jwt-private-key}"
+PUBLIC_SECRET_NAME="${PUBLIC_SECRET_NAME:-jwt-public-key}"
+LOGIN_REPO="${LOGIN_REPO:-KervinCandido/az-func-feedback-login}"
+GITHUB_LOGIN_APP_NAME="${GITHUB_LOGIN_APP_NAME:-github-actions-feedback-platform-login}"
 
 # function app - core
-FUNCTION_CORE_NAME="func-feedback-platform-core"
-CORE_REPO="KervinCandido/az-func-feedback-core"
-GITHUB_CORE_APP_NAME="github-actions-feedback-platform-core"
+FUNCTION_CORE_NAME="${FUNCTION_CORE_NAME:-func-feedback-platform-core}"
+CORE_REPO="${CORE_REPO:-KervinCandido/az-func-feedback-core}"
+GITHUB_CORE_APP_NAME="${GITHUB_CORE_APP_NAME:-github-actions-feedback-platform-core}"
 
 # function app - report
-FUNCTION_REPORT_NAME="func-feedback-platform-report"
-REPORT_REPO="KervinCandido/az-func-feedback-report"
-GITHUB_REPORT_APP_NAME="github-actions-feedback-platform-report"
+FUNCTION_REPORT_NAME="${FUNCTION_REPORT_NAME:-func-feedback-platform-report}"
+REPORT_REPO="${REPORT_REPO:-KervinCandido/az-func-feedback-report}"
+GITHUB_REPORT_APP_NAME="${GITHUB_REPORT_APP_NAME:-github-actions-feedback-platform-report}"
+
+RUN_REPORT_TRIGGER="${RUN_REPORT_TRIGGER:-false}"
+RUN_CLEANUP="${RUN_CLEANUP:-false}"
 
 
 # Criando o Resource Group
@@ -302,9 +380,9 @@ az role assignment create \
     --scope @function_login_scope.txt
 
 echo "Injetando credenciais no GitHub Secrets..."
-gh secret set LOGIN_CLIENT_ID --body "$LOGIN_CLIENT_ID" --repo $LOGIN_REPO
-gh secret set TENANT_ID --body "$TENANT_ID" --repo $LOGIN_REPO
-gh secret set SUBSCRIPTION_ID --body "$SUBSCRIPTION_ID" --repo $LOGIN_REPO
+set_github_secret "LOGIN_CLIENT_ID" "$LOGIN_CLIENT_ID" "$LOGIN_REPO"
+set_github_secret "TENANT_ID" "$TENANT_ID" "$LOGIN_REPO"
+set_github_secret "SUBSCRIPTION_ID" "$SUBSCRIPTION_ID" "$LOGIN_REPO"
 
 # function core
 echo "Criando function ${FUNCTION_CORE_NAME}"
@@ -426,9 +504,9 @@ az role assignment create \
     --scope @function_core_scope.txt
 
 echo "Injetando credenciais no GitHub Secrets..."
-gh secret set CORE_CLIENT_ID --body "$CORE_CLIENT_ID" --repo $CORE_REPO
-gh secret set TENANT_ID --body "$TENANT_ID" --repo $CORE_REPO
-gh secret set SUBSCRIPTION_ID --body "$SUBSCRIPTION_ID" --repo $CORE_REPO
+set_github_secret "CORE_CLIENT_ID" "$CORE_CLIENT_ID" "$CORE_REPO"
+set_github_secret "TENANT_ID" "$TENANT_ID" "$CORE_REPO"
+set_github_secret "SUBSCRIPTION_ID" "$SUBSCRIPTION_ID" "$CORE_REPO"
 
 
 # function report
@@ -524,67 +602,81 @@ az role assignment create \
     --scope @function_report_scope.txt
 
 echo "Injetando credenciais no GitHub Secrets..."
-gh secret set REPORT_CLIENT_ID --body "$REPORT_CLIENT_ID" --repo $REPORT_REPO
-gh secret set TENANT_ID --body "$TENANT_ID" --repo $REPORT_REPO
-gh secret set SUBSCRIPTION_ID --body "$SUBSCRIPTION_ID" --repo $REPORT_REPO
+set_github_secret "REPORT_CLIENT_ID" "$REPORT_CLIENT_ID" "$REPORT_REPO"
+set_github_secret "TENANT_ID" "$TENANT_ID" "$REPORT_REPO"
+set_github_secret "SUBSCRIPTION_ID" "$SUBSCRIPTION_ID" "$REPORT_REPO"
 
-#exemplo trigger function de report
-curl -X POST \
-  -H "Content-Type: application/json" \
-  -H "x-functions-key: $(az functionapp keys list --name func-feedback-platform-report --resource-group rg-feedback-platform --query "masterKey" --output tsv)" \
-  -d '{"input": ""}' \
-  https://func-feedback-platform-report.azurewebsites.net/admin/functions/func-feedback-report
+# exemplo trigger function de report
+if [ "$RUN_REPORT_TRIGGER" = "true" ]; then
+    echo "Executando gatilho da Function Report..."
+
+    curl -X POST \
+      -H "Content-Type: application/json" \
+      -H "x-functions-key: $(az functionapp keys list \
+          --name "$FUNCTION_REPORT_NAME" \
+          --resource-group "$RG_NAME" \
+          --query "masterKey" \
+          --output tsv)" \
+      -d '{"input": ""}' \
+      "https://${FUNCTION_REPORT_NAME}.azurewebsites.net/admin/functions/func-feedback-report"
+else
+    echo "RUN_REPORT_TRIGGER=false. Pulando execução do gatilho da Function Report."
+fi
 
 
-rm private_key.pem public_key.pem kv_id.txt 
-rm function_login_scope.txt function_core_scope.txt function_report_scope.txt
-rm login_fed_creds.json core_fed_creds.json report_fed_creds.json
+if [ "$RUN_CLEANUP" = "true" ]; then
+    echo "Executando limpeza de arquivos temporários e variáveis locais..."
 
-rm workspace_id.txt
-rm dominio_id.txt
+    rm -f private_key.pem public_key.pem kv_id.txt
+    rm -f function_login_scope.txt function_core_scope.txt function_report_scope.txt
+    rm -f login_fed_creds.json core_fed_creds.json report_fed_creds.json
+    rm -f workspace_id.txt dominio_id.txt
 
-unset RG_NAME
-unset LOCATION
-unset VNET_NAME
-unset VSUBNET_NAME
-unset DB_SUBNET_NAME
-unset DB_DNS_ZONE_NAME
-unset KEY_VAULT_NAME
-unset STORAGE_ACCOUNT_NAME
-unset DB_SERVER_NAME
-unset DB_ADMIN_USER
-unset DB_ADMIN_PASSWORD
-unset DB_HOST
-unset DB_JDBC_URL
-unset COMMUNICATION_SERVICE_NAME
-unset EMAIL_SERVICE_NAME
-unset EMAIL_DOMAIN_NAME
-unset EMAIL_DOMAIN
-unset EMAIL_SENDER
-unset EMAIL_CONN_STR
-unset ADMIN_EMAIL
-unset WORKSPACE_NAME
-unset APP_INSIGHTS_NAME
-unset SUBSCRIPTION_ID
-unset TENANT_ID
-unset CURRENT_USER_ID
-unset FUNCTION_LOGIN_NAME
-unset PRIVATE_SECRET_NAME
-unset PUBLIC_SECRET_NAME
-unset LOGIN_REPO
-unset GITHUB_LOGIN_APP_NAME
-unset LOGIN_CLIENT_ID
-unset FUNCTION_CORE_NAME
-unset CORE_REPO
-unset GITHUB_CORE_APP_NAME
-unset CORE_CLIENT_ID
-unset FUNCTION_REPORT_NAME
-unset REPORT_REPO
-unset GITHUB_REPORT_APP_NAME
-unset REPORT_CLIENT_ID
-unset PRINCIPAL_ID
-unset KV_URI
-unset STORAGE_CONNECTION_STRING
+    unset RG_NAME
+    unset LOCATION
+    unset VNET_NAME
+    unset VSUBNET_NAME
+    unset DB_SUBNET_NAME
+    unset DB_DNS_ZONE_NAME
+    unset KEY_VAULT_NAME
+    unset STORAGE_ACCOUNT_NAME
+    unset DB_SERVER_NAME
+    unset DB_ADMIN_USER
+    unset DB_ADMIN_PASSWORD
+    unset DB_HOST
+    unset DB_JDBC_URL
+    unset COMMUNICATION_SERVICE_NAME
+    unset EMAIL_SERVICE_NAME
+    unset EMAIL_DOMAIN_NAME
+    unset EMAIL_DOMAIN
+    unset EMAIL_SENDER
+    unset EMAIL_CONN_STR
+    unset ADMIN_EMAIL
+    unset WORKSPACE_NAME
+    unset APP_INSIGHTS_NAME
+    unset SUBSCRIPTION_ID
+    unset TENANT_ID
+    unset CURRENT_USER_ID
+    unset FUNCTION_LOGIN_NAME
+    unset PRIVATE_SECRET_NAME
+    unset PUBLIC_SECRET_NAME
+    unset LOGIN_REPO
+    unset GITHUB_LOGIN_APP_NAME
+    unset LOGIN_CLIENT_ID
+    unset FUNCTION_CORE_NAME
+    unset CORE_REPO
+    unset GITHUB_CORE_APP_NAME
+    unset CORE_CLIENT_ID
+    unset FUNCTION_REPORT_NAME
+    unset REPORT_REPO
+    unset GITHUB_REPORT_APP_NAME
+    unset REPORT_CLIENT_ID
+    unset PRINCIPAL_ID
+    unset KV_URI
+    unset STORAGE_CONNECTION_STRING
+else
+    echo "RUN_CLEANUP=false. Arquivos temporários preservados para validação/debug."
+fi
 
 
 
