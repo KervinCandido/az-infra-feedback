@@ -252,3 +252,31 @@ Para remover os arquivos temporários ao final da execução, defina no `.env`:
 ```bash
 RUN_CLEANUP="true"
 ```
+
+### Monitoramento
+
+Para monitorar os componentes você pode acessar o [Azure Portal](https://portal.azure.com/) e procurar pelos recursos criados.
+
+Todos os microsserviços tem métricas, logs e traces configurados por padrão utilizando a biblioteca `quarkus-opentelemetry` e `quarkus-micrometer-opentelemetry` e são exportados para o `Application Insights`.
+
+No portal azure criamos os monitoramentos e salvamos em `Azure Workbook`.
+
+## Login
+
+### Login Tentativas de login
+
+![Login Tentativas de login](monitoramento_login_count_tentativas_login.png)
+
+### Login Tempo de processamento
+
+![Login Tempo de resposta](monitoramento_login_tempo_processamento.png)
+
+## Core
+
+### Core Tempo de processamento
+
+![Core Tempo de processamento](monitoramento_feedback_core_tempo_processamento.png)
+
+### Core Quantidade de Feedback por minuto
+
+![Core Quantidade por minutos](monitoramento_feedback_core_qtde_por_minutos.png)
