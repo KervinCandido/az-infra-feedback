@@ -135,4 +135,38 @@ O *core* disponibiliza o *endpoint* HTTP `/api/avaliacoes` utilizando o método 
 
 ### Report - `az-func-feedback-report`
 
-Este microsserviço é responsável pela geração de relatórios. Ele gera relatórios de feedbacks e os envia para os administradores por e-mail.
+O *report* é um microsserviço *serverless* responsável pela geração de relatórios semanais de *feedbacks*. Este microsserviço é acionado por meio de um *timer trigger* configurado para executar uma vez por semana, sempre à meia-noite de sábado. O componente extrai os dados conectando-se ao Azure Database for PostgreSQL, gera os relatórios de *feedbacks*, armazena-os em um *container de blob* (Azure Storage Account) e os envia para os administradores por e-mail por meio do Azure Email Communication Services, facilitando o acesso às informações consolidadas.
+
+Além disso, o microsserviço utiliza o Azure Key Vault para obter as chaves necessárias para o seu funcionamento. Entre as credenciais armazenadas, encontram-se a URL, o usuário e a senha do banco de dados, a chave de conexão com o Azure Storage Account e a credencial de acesso ao Azure Email Communication Services.
+
+O fluxo da função é:
+
+```text
+TimerTrigger
+    ↓
+func-feedback-report
+    ↓
+Consulta feedbacks da última semana no banco de dados
+    ↓
+Calcula total, média, quantidade por dia e quantidade por urgência
+    ↓
+Serializa o relatório em JSON
+    ↓
+Armazena o arquivo no Azure Blob Storage E Envia o relatório por e-mail para os administradores (assincronamente)
+```
+
+O nome do arquivo gerado segue o padrão:
+
+```text
+reports/weekly/{ano}/{mes}/{inicio}-{fim}-relatorio-semanal-feedbacks.json
+```
+Sendo inicio e fim o intervalo de data do relatório no formato: AnoMesDia (no fuso horario America/Sao_Paulo).
+
+O relatório é gerado no dia que o timer for acionado e considera o período entre o início do dia atual no fuso horarioAmerica/Sao_Paulo e uma semana antes.
+
+```text
+Exemplo:
+O relatório é gerado no dia 23/05/2026 00:00:00 (-03:00)
+O relatório considera o período entre 18/05/2026 23:59:00 (-03:00) e 23/05/2026 00:00:00 (-03:00)
+O nome do arquivo gerado será: reports/weekly/2026/05/20260518-20260523-relatorio-semanal-feedbacks.json
+```
