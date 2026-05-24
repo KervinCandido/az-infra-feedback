@@ -170,3 +170,7 @@ O relatório é gerado no dia 23/05/2026 00:00:00 (-03:00)
 O relatório considera o período entre 18/05/2026 23:59:00 (-03:00) e 23/05/2026 00:00:00 (-03:00)
 O nome do arquivo gerado será: reports/weekly/2026/05/20260518-20260523-relatorio-semanal-feedbacks.json
 ```
+
+### Infra - `az-infra-feedback`
+
+O repositório `az-infra-feedback` não é um microserviço como os outros. Trata-se de uma infraestrutura como código (IaC) responsável pela criação e gerenciamento dos recursos da Azure necessários para o funcionamento do sistema.
