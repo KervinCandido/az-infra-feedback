@@ -62,3 +62,52 @@ Toda a solução utiliza **GitHub Actions** em conjunto com **Azure AD Federated
 
 ### Motivação do uso de CI/CD
 Com o uso dessa solução, sempre que um integrante da equipe altera o repositório e envia as atualizações para a branch main, um processo de CI/CD é iniciado automaticamente. Isso realiza o build e o deploy dos serviços sem a necessidade de intervenção manual, garantindo que as alterações cheguem à produção de forma rápida e segura.
+
+## Arquitetura do Sistema
+
+A arquitetura do sistema foi projetada para seguir os princípios de microsserviços, utilizando recursos nativos da Azure para garantir escalabilidade, segurança e baixo custo.
+
+Os microsserviços do sistema são todos *serverless*, ou seja, executam sob demanda e escalam automaticamente conforme a necessidade. Entre eles, o `az-func-feedback-login` e o `az-func-feedback-core` funcionam via *HTTP trigger*, enquanto o `az-func-feedback-report` atua por *timer trigger*, executando periodicamente para gerar relatórios e enviá-los por e-mail para os administradores.
+
+### Login - `az-func-feedback-login`
+
+Este microsserviço é responsável pelo gerenciamento de autenticação e autorização. Ele foi projetado para ser apenas um demonstrativo de como funcionaria um microsserviço com esse propósito; por isso, foi desenvolvido para utilizar um banco de dados em memória (utilizando o banco de dados `H2` em modo de compatibilidade com PostgreSQL) contendo apenas usuários e senhas de demonstração. Sua única função é gerar um token JWT assinado para ser utilizado pelos demais microsserviços — neste caso, especificamente pelo `az-func-feedback-core`, responsável pela lógica de negócio do sistema.
+
+O componente utiliza um único recurso da Azure: o Azure Key Vault, empregado para obter as chaves necessárias para a assinatura e a geração dos tokens JWT. 
+
+Este microsserviço possui um único *endpoint* HTTP, denominado `/api/sign-in`, que recebe as credenciais de usuário e senha e retorna um token JWT assinado.
+
+**Exemplo de *payload* de requisição:**
+```json
+{
+    "username": "<username>",
+    "password": "<password>"
+}
+```
+
+**Exemplo de resposta (response):**
+```json
+{
+    "type": "Bearer",
+    "token": "<jwt-token>",
+    "issuedAt": <timestamp>,
+    "expiresAt": <timestamp>
+}
+```
+
+Os usuários e senhas de demonstração estão disponíveis nas variáveis de ambiente do microsserviço, são:
+
+| Usuário | Senha | Papel |
+|---|---|---|
+|`aluno`|`senha123`|`ALUNO`|
+|`admin`|`senha123`|`ADMIN`|
+|`professor`|`senha123`|`PROFESSOR`|
+
+
+### Core - `az-func-feedback-core`
+
+Este microsserviço é responsável pelo processamento de feedbacks. Ele recebe feedbacks de usuários e os armazena no Azure Database for PostgreSQL. Além disso, ele é responsável por enviar notificações de feedbacks para os administradores.
+
+### Report - `az-func-feedback-report`
+
+Este microsserviço é responsável pela geração de relatórios. Ele gera relatórios de feedbacks e os envia para os administradores por e-mail.

@@ -333,52 +333,6 @@
           "response": []
         }
       ]
-    },
-    {
-      "name": "Admin",
-      "protocolProfileBehavior": {
-        "disableBodyPruning": true
-      },
-      "request": {
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{token}}",
-              "type": "string"
-            }
-          ]
-        },
-        "method": "GET",
-        "header": [],
-        "body": {
-          "mode": "raw",
-          "raw": "",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
-        },
-        "url": {
-          "raw": "https://func-feedback-platform-core.azurewebsites.net/api/admin/feedbacks/caf30a26-8c3f-4c1a-bdd4-9352887d0995/notificacoes",
-          "protocol": "https",
-          "host": [
-            "func-feedback-platform-core",
-            "azurewebsites",
-            "net"
-          ],
-          "path": [
-            "api",
-            "admin",
-            "feedbacks",
-            "caf30a26-8c3f-4c1a-bdd4-9352887d0995",
-            "notificacoes"
-          ]
-        }
-      },
-      "response": []
     }
   ],
   "event": [
