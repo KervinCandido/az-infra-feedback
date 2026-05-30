@@ -55,6 +55,20 @@ set_github_secret() {
     fi
 }
 
+set_github_variable() {
+    local variable_name="$1"
+    local variable_value="$2"
+    local repo="$3"
+
+    if gh variable set "$variable_name" --body "$variable_value" --repo "$repo"; then
+        echo "Variable $variable_name configurada em $repo"
+    else
+        echo "Aviso: não foi possível configurar a variable $variable_name em $repo."
+        echo "Verifique se o usuário autenticado no GitHub CLI tem permissão WRITE/Admin no repositório."
+        echo "Se necessário, cadastre manualmente em Settings → Secrets and variables → Actions → Variables."
+    fi
+}
+
 require_command az
 require_command gh
 require_command openssl
@@ -343,7 +357,7 @@ LOGIN_CLIENT_ID=$(az ad app list --display-name "$GITHUB_LOGIN_APP_NAME" --query
 if [ -z "$LOGIN_CLIENT_ID" ]; then
     echo "Criando App Registration dedicado para o GitHub..."
     LOGIN_CLIENT_ID=$(az ad app create --display-name "$GITHUB_LOGIN_APP_NAME" --query appId --output tsv | tr -d '\r')
-    
+
     echo "Criando Service Principal..."
     az ad sp create --id "$LOGIN_CLIENT_ID"
 fi
@@ -383,6 +397,9 @@ echo "Injetando credenciais no GitHub Secrets..."
 set_github_secret "LOGIN_CLIENT_ID" "$LOGIN_CLIENT_ID" "$LOGIN_REPO"
 set_github_secret "TENANT_ID" "$TENANT_ID" "$LOGIN_REPO"
 set_github_secret "SUBSCRIPTION_ID" "$SUBSCRIPTION_ID" "$LOGIN_REPO"
+
+echo "Configurando GitHub Actions Variables do Login..."
+set_github_variable "AZURE_FUNCTIONAPP_NAME" "$FUNCTION_LOGIN_NAME" "$LOGIN_REPO"
 
 # function core
 echo "Criando function ${FUNCTION_CORE_NAME}"
@@ -467,7 +484,7 @@ CORE_CLIENT_ID=$(az ad app list --display-name "$GITHUB_CORE_APP_NAME" --query "
 if [ -z "$CORE_CLIENT_ID" ]; then
     echo "Criando App Registration dedicado para o GitHub..."
     CORE_CLIENT_ID=$(az ad app create --display-name "$GITHUB_CORE_APP_NAME" --query appId --output tsv | tr -d '\r')
-    
+
     echo "Criando Service Principal..."
     az ad sp create --id "$CORE_CLIENT_ID"
 fi
@@ -507,6 +524,9 @@ echo "Injetando credenciais no GitHub Secrets..."
 set_github_secret "CORE_CLIENT_ID" "$CORE_CLIENT_ID" "$CORE_REPO"
 set_github_secret "TENANT_ID" "$TENANT_ID" "$CORE_REPO"
 set_github_secret "SUBSCRIPTION_ID" "$SUBSCRIPTION_ID" "$CORE_REPO"
+
+echo "Configurando GitHub Actions Variables do Core..."
+set_github_variable "AZURE_FUNCTIONAPP_NAME" "$FUNCTION_CORE_NAME" "$CORE_REPO"
 
 
 # function report
@@ -565,7 +585,7 @@ REPORT_CLIENT_ID=$(az ad app list --display-name "$GITHUB_REPORT_APP_NAME" --que
 if [ -z "$REPORT_CLIENT_ID" ]; then
     echo "Criando App Registration dedicado para o GitHub..."
     REPORT_CLIENT_ID=$(az ad app create --display-name "$GITHUB_REPORT_APP_NAME" --query appId --output tsv | tr -d '\r')
-    
+
     echo "Criando Service Principal..."
     az ad sp create --id "$REPORT_CLIENT_ID"
 fi
@@ -605,6 +625,9 @@ echo "Injetando credenciais no GitHub Secrets..."
 set_github_secret "REPORT_CLIENT_ID" "$REPORT_CLIENT_ID" "$REPORT_REPO"
 set_github_secret "TENANT_ID" "$TENANT_ID" "$REPORT_REPO"
 set_github_secret "SUBSCRIPTION_ID" "$SUBSCRIPTION_ID" "$REPORT_REPO"
+
+echo "Configurando GitHub Actions Variables do Report..."
+set_github_variable "AZURE_FUNCTIONAPP_NAME" "$FUNCTION_REPORT_NAME" "$REPORT_REPO"
 
 # exemplo trigger function de report
 if [ "$RUN_REPORT_TRIGGER" = "true" ]; then
